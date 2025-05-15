@@ -194,6 +194,7 @@ function startTimer() {
 function stopTimer() {
     clearInterval(timerInterval);
     timerInterval = null;
+    startTime = null;
 }
 
 function playSound(sound) {
@@ -260,8 +261,13 @@ function tryClickMove(grid, clickedR, clickedC) {
     return false;
 }
 
-async function scrambleGrid(movesCount = 100) {
+async function scrambleGrid() {
     let lastMove = null;
+
+    const numRows = grid.length;
+    const numCols = grid[0].length;
+    const numOfTiles = numRows * numCols - 1;
+    const movesCount = 10 * numOfTiles * numOfTiles;
 
     for (let i = 0; i < movesCount; i++) {
         const legalMoves = getLegalMoves(grid).filter((move) => {
@@ -285,6 +291,7 @@ async function scrambleGrid(movesCount = 100) {
     moves = [];
     movesCounterDiv.innerText = `${moves.length} moves`;
     timeDisplay.innerText = '0.00';
+    movesPerSecondDiv.innerText = '0.00 m/s';
 }
 
 function getLegalMoves(grid) {

@@ -1,31 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tile Game</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
-    <section id="container">
-        <select id="grid-select">
-            <option value="4x4">4x4</option>
-            <option value="5x5">5x5</option>
-            <option value="6x4">6x4</option>
-        </select>
-        <button id="start">Start Game</button>
+  <main id="container">
+    <header class="controls">
+      <label for="grid-select">Select Grid:</label>
+      <select id="grid-select">
+        <option value="4x4">4x4</option>
+        <option value="5x5">5x5</option>
+        <option value="6x4">6x4</option>
+      </select>
+      <button id="start">Start Game</button>
+    </header>
 
-        <section class="stats">
-            <span id="time">0.00</span>
-            <span id="moves-counter">0 moves</span>
-            <span id="moves-per-second">0 m/s</span>
-        </section>
-
-        <div id="board"></div>
+    <section class="stats">
+      <div><strong>Time:</strong> <span id="time">0.00</span></div>
+      <div><strong>Moves:</strong> <span id="moves-counter">0 moves</span></div>
+      <div><strong>Speed:</strong> <span id="moves-per-second">0 m/s</span></div>
     </section>
 
-    <script src="index.js"></script>
+    <section id="board"></section>
+  </main>
+
+  <script src="index.js"></script>
 </body>
 </html>
