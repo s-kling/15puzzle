@@ -24,7 +24,13 @@ let grid6x4 = [
 
 let moveMade = false;
 let grid = grid4x4;
+let moves = [];
+let startTime = null;
+let timerInterval = null;
+const timeDisplay = document.getElementById('time');
+const movesPerSecondDiv = document.getElementById('moves-per-second');
 const moveSound = new Audio('assets/move.mp3');
+const movesCounterDiv = document.getElementById('moves-counter');
 
 const gridSelect = document.getElementById('grid-select');
 gridSelect.addEventListener('change', (event) => {
@@ -71,6 +77,7 @@ function displayBoard() {
             tileDiv.addEventListener('click', () => {
                 if (tryClickMove(grid, r, c)) {
                     displayBoard();
+                    checkSolved();
                 }
             });
             board.appendChild(tileDiv);
@@ -95,62 +102,98 @@ function startMovingLogic() {
                 direction = 'right';
                 break;
         }
-        if (direction && makeMove(grid, direction)) {
+        if (direction && makeMove(grid, direction, 1)) {
+            startTimer();
             displayBoard(grid);
+            checkSolved();
         }
     });
 }
 
-function makeMove(grid, direction, makeSound = true) {
-    let rowWithNull = -1;
-    let colWithNull = -1;
+function makeMove(grid, direction, distance, makeSound = true) {
+    let row = -1,
+        col = -1;
 
-    // Find the null tile
-    for (let r = 0; r < grid.length; r++) {
+    // Find the position of the null (empty) tile
+    outer: for (let r = 0; r < grid.length; r++) {
         for (let c = 0; c < grid[r].length; c++) {
             if (grid[r][c] === null) {
-                rowWithNull = r;
-                colWithNull = c;
-                break;
+                row = r;
+                col = c;
+                break outer;
             }
         }
-        if (rowWithNull !== -1) break;
     }
 
-    // Determine move target based on direction
-    let targetR = rowWithNull;
-    let targetC = colWithNull;
+    if (row === -1 || col === -1) return false; // Null tile not found
 
-    switch (direction) {
-        case 'up':
-            targetR = rowWithNull + 1;
-            break;
-        case 'down':
-            targetR = rowWithNull - 1;
-            break;
-        case 'left':
-            targetC = colWithNull + 1;
-            break;
-        case 'right':
-            targetC = colWithNull - 1;
-            break;
-        default:
-            return false; // invalid direction
+    // Direction vectors
+    const directions = {
+        up: [1, 0, 'U'],
+        down: [-1, 0, 'D'],
+        left: [0, 1, 'L'],
+        right: [0, -1, 'R'],
+    };
+
+    if (!directions.hasOwnProperty(direction)) return false;
+
+    const [dRow, dCol, moveLetter] = directions[direction];
+
+    // Perform move step by step
+    for (let i = 0; i < distance; i++) {
+        const newRow = row + dRow;
+        const newCol = col + dCol;
+
+        // Check bounds
+        if (newRow < 0 || newRow >= grid.length || newCol < 0 || newCol >= grid[0].length) {
+            return false; // Stop if move goes out of bounds
+        }
+
+        // Swap with target tile
+        grid[row][col] = grid[newRow][newCol];
+        grid[newRow][newCol] = null;
+
+        // Update null position
+        row = newRow;
+        col = newCol;
     }
 
-    // Check bounds
-    if (targetR >= 0 && targetR < grid.length && targetC >= 0 && targetC < grid[0].length) {
-        // Swap tiles
-        grid[rowWithNull][colWithNull] = grid[targetR][targetC];
-        grid[targetR][targetC] = null;
+    // Sound and move recording
+    if (makeSound) playSound(moveSound);
+    moves.push(`${moveLetter}${distance}`);
+    movesCounterDiv.innerText = `${moves.length} moves`;
 
-        // Play move sound
-        if (makeSound) playSound(moveSound);
+    return true;
+}
 
-        return true; // move was successful
-    }
+function startTimer() {
+    if (startTime !== null) return;
 
-    return false; // move was invalid
+    startTime = Date.now();
+    timerInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const totalSeconds = Math.floor(elapsed / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        if (elapsed < 600000) {
+            // under 10 minutes
+            const centiseconds = Math.floor((elapsed % 1000) / 10);
+            timeDisplay.innerText =
+                (minutes > 0 ? `${minutes}:` : '') +
+                `${seconds}`.padStart(minutes > 0 ? 2 : 1, '0') +
+                `.${centiseconds.toString().padStart(2, '0')}`;
+        } else {
+            timeDisplay.innerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        const movesPerSecond = moves.length / (totalSeconds + 1);
+        movesPerSecondDiv.innerText = `${movesPerSecond.toFixed(2)} m/s`;
+    }, 30);
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
 }
 
 function playSound(sound) {
@@ -159,7 +202,38 @@ function playSound(sound) {
     s.play();
 }
 
+function checkSolved() {
+    const goal = getGoalGrid(grid);
+    for (let r = 0; r < grid.length; r++) {
+        for (let c = 0; c < grid[r].length; c++) {
+            if (grid[r][c] !== goal[r][c]) return;
+        }
+    }
+
+    stopTimer();
+    alert('🎉 Puzzle solved!');
+}
+
+function getGoalGrid(grid) {
+    const rows = grid.length;
+    const cols = grid[0].length;
+    const goal = [];
+    let count = 1;
+    for (let r = 0; r < rows; r++) {
+        goal[r] = [];
+        for (let c = 0; c < cols; c++) {
+            goal[r][c] = count++;
+        }
+    }
+    goal[rows - 1][cols - 1] = null;
+    return goal;
+}
+
 function tryClickMove(grid, clickedR, clickedC) {
+    if (!startTime) {
+        startTimer();
+    }
+
     let nullR, nullC;
     outer: for (let r = 0; r < grid.length; r++) {
         for (let c = 0; c < grid[r].length; c++) {
@@ -174,16 +248,12 @@ function tryClickMove(grid, clickedR, clickedC) {
     if (clickedR === nullR && clickedC !== nullC) {
         const dir = clickedC < nullC ? 'right' : 'left';
         const distance = Math.abs(clickedC - nullC);
-        for (let i = 0; i < distance; i++) {
-            makeMove(grid, dir);
-        }
+        makeMove(grid, dir, distance);
         return true;
     } else if (clickedC === nullC && clickedR !== nullR) {
         const dir = clickedR < nullR ? 'down' : 'up';
         const distance = Math.abs(clickedR - nullR);
-        for (let i = 0; i < distance; i++) {
-            makeMove(grid, dir);
-        }
+        makeMove(grid, dir, distance);
         return true;
     }
 
@@ -207,16 +277,14 @@ async function scrambleGrid(movesCount = 100) {
         if (legalMoves.length === 0) break;
 
         const move = legalMoves[Math.floor(Math.random() * legalMoves.length)];
-        makeMoveNTimes(grid, move.direction, move.distance);
+        makeMove(grid, move.direction, move.distance, false);
         displayBoard(grid);
         lastMove = move;
     }
-}
 
-function makeMoveNTimes(grid, direction, distance) {
-    for (let i = 0; i < distance; i++) {
-        makeMove(grid, direction, false);
-    }
+    moves = [];
+    movesCounterDiv.innerText = `${moves.length} moves`;
+    timeDisplay.innerText = '0.00';
 }
 
 function getLegalMoves(grid) {
