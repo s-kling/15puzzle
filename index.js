@@ -25,6 +25,7 @@ let grid6x4 = [
 let moveMade = false;
 let grid = grid4x4;
 let moves = [];
+let nullPosition = null;
 let startTime = null;
 let timerInterval = null;
 const timeDisplay = document.getElementById('time');
@@ -111,21 +112,24 @@ function startMovingLogic() {
 }
 
 function makeMove(grid, direction, distance, makeSound = true) {
-    let row = -1,
-        col = -1;
-
-    // Find the position of the null (empty) tile
-    outer: for (let r = 0; r < grid.length; r++) {
-        for (let c = 0; c < grid[r].length; c++) {
-            if (grid[r][c] === null) {
-                row = r;
-                col = c;
-                break outer;
+    // Use cached nullPosition if available, otherwise find and cache it
+    let row, col;
+    if (nullPosition && grid[nullPosition.row][nullPosition.col] === null) {
+        row = nullPosition.row;
+        col = nullPosition.col;
+    } else {
+        outer: for (let r = 0; r < grid.length; r++) {
+            for (let c = 0; c < grid[r].length; c++) {
+                if (grid[r][c] === null) {
+                    row = r;
+                    col = c;
+                    nullPosition = { row, col };
+                    break outer;
+                }
             }
         }
+        if (row === undefined || col === undefined) return false; // Null tile not found
     }
-
-    if (row === -1 || col === -1) return false; // Null tile not found
 
     // Direction vectors
     const directions = {
@@ -158,6 +162,9 @@ function makeMove(grid, direction, distance, makeSound = true) {
         col = newCol;
     }
 
+    // Update cached nullPosition
+    nullPosition = { row, col };
+
     // Sound and move recording
     if (makeSound) playSound(moveSound);
     moves.push(`${moveLetter}${distance}`);
@@ -186,7 +193,7 @@ function startTimer() {
             timeDisplay.innerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
 
-        const movesPerSecond = moves.length / (totalSeconds + 1);
+        const movesPerSecond = moves.length / (elapsed / 1000);
         movesPerSecondDiv.innerText = `${movesPerSecond.toFixed(2)} m/s`;
     }, 30);
 }
