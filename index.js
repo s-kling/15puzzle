@@ -28,10 +28,12 @@ let moves = [];
 let nullPosition = null;
 let startTime = null;
 let timerInterval = null;
+
 const timeDisplay = document.getElementById('time');
 const movesPerSecondDiv = document.getElementById('moves-per-second');
 const moveSound = new Audio('assets/move.mp3');
 const movesCounterDiv = document.getElementById('moves-counter');
+const muteSounds = document.getElementById('mute-sound');
 
 const gridSelect = document.getElementById('grid-select');
 gridSelect.addEventListener('change', (event) => {
@@ -166,7 +168,7 @@ function makeMove(grid, direction, distance, makeSound = true) {
     nullPosition = { row, col };
 
     // Sound and move recording
-    if (makeSound) playSound(moveSound);
+    if (makeSound && !muteSounds.checked) playSound(moveSound);
     moves.push(`${moveLetter}${distance}`);
     movesCounterDiv.innerText = `${moves.length} moves`;
 
